@@ -1,0 +1,13 @@
+interface: "crc"
+port: 2000
+debug: true
+behavior:
+  filtered: []
+  opened: ["1", "4-10"]
+  closed: ["2", "3"]
+  default: "closed"
+information_input:
+  nemea:
+    ip: "10.0.0.1"
+    port: 3100
+  surikata: "something"
