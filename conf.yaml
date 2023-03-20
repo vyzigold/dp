@@ -1,9 +1,10 @@
 interface: "crc"
+ip: "10.1.0.2"
 port: 2000
-debug: true
+debug: false
 behavior:
-  filtered: []
-  opened: ["1", "4-10"]
+  filtered: ["12"]
+  opened: ["1", "4-10", "80"]
   closed: ["2", "3"]
   default: "closed"
 information_input:

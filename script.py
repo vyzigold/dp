@@ -85,6 +85,11 @@ def load_conf(filename):
         if "interface" not in conf:
             raise ConfigError("A required 'interface' option is missing in configuration file")
 
+        if "ip" not in conf:
+            conf["ip"] = get_if_addr(conf["interface"])
+        if "mac" not in conf:
+            conf["mac"] = get_if_hwaddr(conf["interface"])
+
         conf["ports"] = parse_behavior(conf["behavior"])
         return conf
 
@@ -93,16 +98,40 @@ def print_usage():
     print("Take a look into doc/example_config.yaml to see an example config file with all possible values documented and explained.")
 
 def listen(conf):
-    s=socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+    s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
     s.bind((conf["interface"], 0))
-    if DEBUG:
-        print("Listening on " + conf["interface"])
+    print("Listening on: " + conf["interface"] + " with IP: " + conf["ip"] + " MAC: " + conf["mac"])
     while True:
-        p = s.recv(2000)
-        eth = Ether(p)
-        if TCP in eth:
-            print(time.time())
-            os.sys.stdout.write("<%s>\n\n"%eth["IP"].show())
+        frame = Ether(s.recv(3000))
+        if frame.haslayer(IP) and frame.haslayer(TCP):
+            scanner_mac = frame["Ether"].src
+            scanner_ip = frame["IP"].src
+            scanner_port = frame["TCP"].sport
+
+            my_port = frame["TCP"].dport
+
+            seq = frame["TCP"].seq
+            print(scanner_ip)
+            if frame["TCP"].flags == 0x2: # SYN received
+                if conf["ports"][my_port] == PortStatus.OPENED:
+                    if DEBUG:
+                        print("Sending SA to: " + scanner_ip + ":" + str(scanner_port))
+                        print("From: " + conf["ip"] + ":" + str(my_port))
+                    sendp(Ether(dst=scanner_mac, src=conf["mac"])/IP(dst=scanner_ip, src=conf["ip"])/TCP(sport=my_port, dport=scanner_port, flags="SA", seq=200, ack=seq+1), iface=conf["interface"])
+                if conf["ports"][my_port] == PortStatus.CLOSED:
+                    if DEBUG:
+                        print("Sending RA to: " + scanner_ip + ":" + str(scanner_port))
+                        print("From: " + conf["ip"] + ":" + str(my_port))
+                    sendp(Ether(dst=scanner_mac, src=conf["mac"])/IP(dst=scanner_ip, src=conf["ip"])/TCP(sport=my_port, dport=scanner_port, flags="RA", seq=200, ack=seq+1), iface=conf["interface"])
+                if conf["ports"][my_port] == PortStatus.FILTERED:
+                    if DEBUG:
+                        print("Sending nothing to: " + scanner_ip + ":" + str(scanner_port))
+            if frame["TCP"].flags == 0x10 or frame["TCP"].flags == 0x11: # ACK or ACK+FIN received
+                if conf["ports"][my_port] != PortStatus.FILTERED:
+                    if DEBUG:
+                        print("Sending R to: " + scanner_ip + ":" + str(scanner_port))
+                        print("From: " + conf["ip"] + ":" + str(my_port))
+                    sendp(Ether(dst=scanner_mac, src=conf["mac"])/IP(dst=scanner_ip, src=conf["ip"])/TCP(sport=my_port, dport=scanner_port, flags="R", seq=200, ack=seq+1), iface=conf["interface"])
 
 def main():
     conf = None
@@ -117,7 +146,7 @@ def main():
         print_usage()
         return 2
 
-    reroute_ports(conf)
+#    reroute_ports(conf)
     listen(conf)
 
 def reroute_ports(conf):
@@ -130,7 +159,7 @@ def restore_iptables():
     os.system("iptables-restore < /tmp/iptables_backup")
 
 if __name__ == "__main__":
-    backup_iptables()
+#    backup_iptables()
     return_value = main()
-    restore_iptables()
+#    restore_iptables()
     exit(return_value)
