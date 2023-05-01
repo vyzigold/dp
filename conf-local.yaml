@@ -1,0 +1,45 @@
+interface: "eth1"
+ip: "10.1.2.11"
+debug: true
+reaction_duration: 60000
+suricata_rules_filename: reaction.rules
+filter:
+  "
+   src host 77.75.77.222 and src port 443
+  "
+
+reroute_targets:
+  honeypot:
+    ip: "127.0.0.1"
+    mac: "00:00:00:00:00:00"
+    interface: "lo"
+
+behavior:
+  filtered: ["12"]
+  opened: ["1", "4-10", "80"]
+  closed: ["3"]
+  honeypot: ["20-30"]
+  default: "closed"
+
+input:
+  warden:
+    client_config:
+      url: 'https://warden.example.com/warden3'
+      keyfile: '/opt/warden3/etc/key.pem'
+      certfile: '/opt/warden3/etc/cert.pem'
+      cafile: '/opt/warden3/etc/tcs-ca-bundle.pem'
+      timeout: 10
+      errlog_level: "debug"
+      filelog_level: "debug"
+      idstore: "MyClient.id"
+      name: "cz.example.warden.test"
+    event_filter:
+      categories: ["Recon.Scanning", "Attempt.Login"]
+      no_categories: []
+      tag: []
+      no_tag: []
+      group: []
+      no_group: []
+    polling_interval: 1
+      #    match: ["source"]
+    match: ["source", "target"]
