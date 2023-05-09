@@ -1,5 +1,0 @@
-<interface type='bridge' name='dp'>
-	<mtu size='1500'/>
-	<bridge stp='on' delay='200'>
-	</bridge>
-</interface> 

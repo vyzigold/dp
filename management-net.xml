@@ -1,8 +1,0 @@
-<network connections='1'>
-  <name>other</name>
-  <forward mode='nat'><nat><port start='1024' end='65535'/></nat></forward>
-  <bridge name='virbr8' stp='on' delay='0'/>
-  <domain name='other'/>
-  <ip address='192.168.111.1' netmask='255.255.255.0'>
-    <dhcp><range start='192.168.111.128' end='192.168.111.254'/></dhcp></ip>
-</network>
