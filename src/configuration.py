@@ -30,6 +30,11 @@ CONFIG_STRUCTURE = {
             "default": None,
             "children": {}
             },
+        "mac": {
+            "required": False,
+            "default": None,
+            "children": {}
+            },
         "debug": {
             "required": False,
             "default": False,
@@ -347,10 +352,16 @@ def load_conf(filename):
         sanitize(conf, CONFIG_STRUCTURE)
         for target in conf["reroute_targets"]:
             sanitize(conf["reroute_targets"][target], REROUTE_TARGET_STRUCTURE)
-        if "ip" not in conf or conf["ip"] is None:
-            conf["ip"] = get_if_addr(conf["interface"])
-        if "mac" not in conf or conf["mac"] is None:
-            conf["mac"] = get_if_hwaddr(conf["interface"])
+        try:
+            if "ip" not in conf or conf["ip"] is None:
+                conf["ip"] = get_if_addr(conf["interface"])
+            if "mac" not in conf or conf["mac"] is None:
+                conf["mac"] = get_if_hwaddr(conf["interface"])
+        except Exception:
+            raise ConfigError("Couldn't find ip or mac address. Are you sure the "
+            "specified interface: \"" + conf["interface"] + "\" exists?")
+
+        Globals.DEBUG = conf["debug"]
         for key in conf["reroute_targets"]:
             target = conf["reroute_targets"][key]
             src_ip = get_if_addr(target["interface"])
