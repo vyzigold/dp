@@ -1,8 +1,8 @@
-interface: "crc"
+interface: "eth1"
 ip: "10.1.2.11"
 debug: true
 reaction_duration: 60000
-suricata_rules_filename: reaction.rules
+suricata_rules_filename: ../reaction.rules
 filter:
   "
    src host 77.75.77.222 and src port 443
