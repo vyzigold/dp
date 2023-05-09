@@ -1,0 +1,210 @@
+# The interface on which the answerer should listen.
+# This should be the interface, closest to the attacker.
+# This configuration option is REQUIRED
+interface: "eth1"
+
+# The IP, assigned to the above interface.
+# This option is useful, if the interface
+# has multiple IPs.
+# This configuration option is OPTIONAL
+ip: "10.1.2.11"
+
+# Set this to true to allow debugging output.
+# Using this can be very verbose and it'll slow
+# everything down.
+# This configuration option is OPTIONAL
+# It's set to false by default
+debug: false
+
+# How long should the project react to an attack in seconds.
+# The duration is timed from the moment warden informs
+# the project about an ongoing attack. After the duration
+# runs out, the project will no longer react to that attack
+# unless warden informs the project again.
+# This configuration option is OPTIONAL
+# Default is 60 seconds
+reaction_duration: 60
+
+# Name of file, to which the project should write its generated 
+# suricata rules. This will allow suricata to stop the attack
+# from getting to the original victim, while the project reacts to it
+# This configuration option is OPTIONAL
+# Default is "reaction.rules"
+suricata_rules_filename: reaction.rules
+
+# Additional bpf filter, to which the project should react.
+# This can be any bpf filter. The project will always react
+# to the specified traffic. No matter the information from
+# warden or the reaction_duration.
+# This configuration option is OPTIONAL
+# Default is empty filter - project will react only
+# targets received from warden
+filter:
+  "
+   src host 77.75.77.222 and src port 443
+  "
+
+# Definitions of targets for rerouting attack
+# This configuration option is OPTIONAL
+# Default is no target - there won't be any rerouting done.
+reroute_targets:
+  # Target name. Use any name you want
+  honeypot:
+    # IP address of the target
+    # This configuration option is REQUIRED for each target
+    ip: "127.0.0.1"
+    # MAC address of next hop on the way to the target
+    # This configuration option is REQUIRED for each target
+    mac: "00:00:00:00:00:00"
+    # The interface from which to send the rerouted traffic
+    # towards the target
+    # This configuration option is REQUIRED for each target
+    interface: "lo"
+  # Another target name
+  honeypot:
+    ip: "127.0.0.1"
+    mac: "00:00:00:00:00:00"
+    interface: "lo"
+
+# The behavior definition for each port.
+# Ports can be either filtered, opened, closed
+# or rerouted to a target. Specify target name
+# and a list of ports for rerouting. Ports, that
+# aren't specified anywhere use the "default"
+# option
+# This configuration option is OPTIONAL
+# Default is to use the default action for all ports
+# That means, that all ports will be closed
+behavior:
+  # List of ports, that should appear as filtered
+  # This configuration option is OPTIONAL
+  # Default is, that no port will be filtered
+  filtered: ["12"]
+
+  # List of ports, that should appear as opened
+  # This configuration option is OPTIONAL
+  # Default is, that no port will be opened
+  opened: ["1", "4-10", "80"]
+
+  # List of ports, that should appear as closed
+  # This configuration option is OPTIONAL
+  # Default is, that no port will be closed
+  closed: ["3"]
+
+  # List of ports, that should be rerouted
+  # to the specified target ("honeypot" in
+  # this case)
+  # This configuration option is OPTIONAL
+  # Default is, that no port will be rerouted
+  # to a target, that isn't specified hele
+  honeypot: ["20-30"]
+
+  # The default behavior, this will be used
+  # for all the ports, that aren't specified
+  # in any of the options above
+  # This configuration option is OPTIONAL
+  # Default is "closed"
+  default: "closed"
+
+# This section is used for specifying different
+# ways of information input. Currently only
+# warden is supported
+# This configuration option is OPTIONAL
+# Default is no information input - the
+# project will react only to traffic specified
+# in the "filter" option.
+input:
+  # Warden configuration section
+  # This configuration option is OPTIONAL
+  # Default is no information input - the
+  # project will react only to traffic specified
+  # in the "filter" option.
+  warden:
+    # Warden client configuration section
+    # This configuration option is REQUIRED
+    # For meaning of each option see
+    # README of the warden client:
+    # https://warden.cesnet.cz/en/downloads
+    client_config:
+      # This configuration option is REQUIRED
+      url: 'https://warden.example.com/warden3'
+
+      # This configuration option is REQUIRED
+      keyfile: '/opt/warden3/etc/key.pem'
+
+      # This configuration option is REQUIRED
+      certfile: '/opt/warden3/etc/cert.pem'
+
+      # This configuration option is REQUIRED
+      cafile: '/opt/warden3/etc/tcs-ca-bundle.pem'
+
+      # This configuration option is OPTIONAL
+      # Default is 10
+      timeout: 10
+
+      # This configuration option is OPTIONAL
+      # Default is "debug"
+      errlog_level: "debug"
+
+      # This configuration option is OPTIONAL
+      # Default is "debug"
+      filelog_level: "debug"
+
+      # This configuration option is REQUIRED
+      idstore: "MyClient.id"
+
+      # This configuration option is REQUIRED
+      name: "cz.example.warden.test"
+
+    # Warden event filtering section
+    # This configuration option is REQUIRED
+    # For meaning of each option see
+    # README of the warden client:
+    # https://warden.cesnet.cz/en/downloads
+    # and IDEA format definition:
+    # https://idea.cesnet.cz/en/definition
+    event_filter:
+
+      # This configuration option is OPTIONAL
+      # The default is []
+      categories: ["Recon.Scanning", "Attempt.Login"]
+
+      # This configuration option is OPTIONAL
+      # The default is []
+      no_categories: []
+
+      # This configuration option is OPTIONAL
+      # The default is []
+      tag: []
+
+      # This configuration option is OPTIONAL
+      # The default is []
+      no_tag: []
+
+      # This configuration option is OPTIONAL
+      # The default is []
+      group: []
+
+      # This configuration option is OPTIONAL
+      # The default is []
+      no_group: []
+
+    # The interval specifying how often to ask warden
+    # for information
+    # This configuration option is OPTIONAL
+    # The default is 1 second
+    polling_interval: 1
+
+    # Which addresses received from warden should be
+    # used for active reaction. When ["source", "target"]
+    # is used, the project will react only to traffic,
+    # that is comming from source specified by warden
+    # to target specified by warden. While when only
+    # ["source"] is used, the project will react to all
+    # attack coming from that address, no matter where
+    # the attack is directed
+    # This configuration option is OPTIONAL
+    # The default is ["source"]
+    match: ["source", "target"]
+    #    match: ["source"]
+    #    match: ["target"]
