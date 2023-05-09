@@ -1,4 +1,4 @@
-interface: "eth1"
+interface: "crc"
 ip: "10.1.2.11"
 debug: true
 reaction_duration: 60000
