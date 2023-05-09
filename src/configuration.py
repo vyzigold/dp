@@ -4,6 +4,7 @@ This file includes the following functions:
     parse_port_ranges - Parses ports
     parse_behavior - parses the behavior part of config
     load_conf - loads configuration from file
+    sanitize - checks the loaded config
     print_usage - prints usage message
 
 This file includes the following classes:
@@ -327,6 +328,18 @@ def parse_behavior(behavior, reroute_targets):
 
 
 def sanitize(conf, structure):
+    """Checks the loaded configuration
+
+    Raises an exception if a required value is missing
+    Fills in default values for optional values.
+    This is a recursive function
+
+    @type conf: dictionary
+    @param conf: The config to check
+    @type structure: dictionary
+    @param structure: The expected structure and other information
+                      about the received conf
+    """
     for key in structure:
         if structure[key]["required"] and key not in conf:
             raise ConfigError("Mandatory key configuration "
@@ -358,8 +371,9 @@ def load_conf(filename):
             if "mac" not in conf or conf["mac"] is None:
                 conf["mac"] = get_if_hwaddr(conf["interface"])
         except Exception:
-            raise ConfigError("Couldn't find ip or mac address. Are you sure the "
-            "specified interface: \"" + conf["interface"] + "\" exists?")
+            raise ConfigError("Couldn't find ip or mac address. "
+                              "Are you sure the specified "
+                              "interface: '" + conf["interface"] + "' exists?")
 
         Globals.DEBUG = conf["debug"]
         for key in conf["reroute_targets"]:
